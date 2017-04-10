@@ -86,7 +86,7 @@ class LDAP extends Component {
         }
 
         $r = ldap_modify($c, $dn, [
-            'userPassword' => $this->hash_ssha($new_password),
+            'userPassword' => $this->hashSSHA($new_password),
         ]);
         ldap_close($c);
         return $r;
@@ -99,7 +99,7 @@ class LDAP extends Component {
         if (!ldap_bind($c, $this->conf['ldap']['admin_dn'], $this->conf['ldap']['admin_password'])) {
             return false;
         }
-        $entry = ['userPassword' => $this->hash_ssha($new_password)];
+        $entry = ['userPassword' => $this->hashSSHA($new_password)];
         $r = @ldap_modify($c, $dn, $entry);
         if ($r === false && 32 === ldap_errno($c)) {
             $r = ldap_add($c, $dn, $entry);
@@ -135,7 +135,7 @@ class LDAP extends Component {
         return $c;
     }
 
-    private function hash_ssha(string $password): string {
+    private function hashSSHA(string $password): string {
         $salt = random_bytes(6);
         return '{SSHA}' . base64_encode(sha1($password . $salt, true) . $salt);
     }
