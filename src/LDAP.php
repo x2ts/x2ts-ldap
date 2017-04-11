@@ -29,12 +29,12 @@ class LDAP extends Component {
     ];
 
     public function auth(string $username, string $password): bool {
-        $c = ldap_connect($this->conf['ldap']['host'], $this->conf['ldap']['port']);
+        $c = ldap_connect($this->conf['host'], $this->conf['port']);
         if (!$c) {
             throw new LDAPException('Cannot connect to LDAP server');
         }
         ldap_set_option($c, LDAP_OPT_PROTOCOL_VERSION, 3);
-        $dn = "{$this->conf['ldap']['auth_key']}={$username},{$this->conf['ldap']['dn_base']}";
+        $dn = "{$this->conf['auth_key']}={$username},{$this->conf['dn_base']}";
         Toolkit::trace('LDAP DN:' . $dn);
         $r = @ldap_bind($c, $dn, $password);
         ldap_close($c);
@@ -43,7 +43,7 @@ class LDAP extends Component {
 
     public function findByUsername(string $username) {
         $c = $this->getLDAPConnection();
-        $dn = "{$this->conf['ldap']['auth_key']}={$username},{$this->conf['ldap']['dn_base']}";
+        $dn = "{$this->conf['auth_key']}={$username},{$this->conf['dn_base']}";
         Toolkit::trace("LDAP DN: $dn");
         $result = @ldap_read($c, $dn, 'objectClass=person');
         if ($result === false) {
@@ -62,7 +62,7 @@ class LDAP extends Component {
 
     public function findByMail(string $mail) {
         $c = $this->getLDAPConnection();
-        $dn = "{$this->conf['ldap']['dn_base']}";
+        $dn = "{$this->conf['dn_base']}";
         $filter = "(mail=$mail)";
         $justthese = array("uid", "mail");
         $result = ldap_search($c, $dn, $filter, $justthese);
@@ -78,7 +78,7 @@ class LDAP extends Component {
 
     public function changePassword(string $username, string $old_password, string $new_password) {
         $c = $this->getLDAPConnection();
-        $dn = "{$this->conf['ldap']['auth_key']}={$username},{$this->conf['ldap']['dn_base']}";
+        $dn = "{$this->conf['auth_key']}={$username},{$this->conf['dn_base']}";
         Toolkit::trace("LDAP DN: $dn");
         $r = @ldap_bind($c, $dn, $old_password);
         if (!$r) {
@@ -94,9 +94,9 @@ class LDAP extends Component {
 
     public function overwritePassword(string $username, string $new_password) {
         $c = $this->getLDAPConnection();
-        $dn = "{$this->conf['ldap']['auth_key']}={$username},{$this->conf['ldap']['dn_base']}";
+        $dn = "{$this->conf['auth_key']}={$username},{$this->conf['dn_base']}";
         Toolkit::trace("LDAP DN: $dn");
-        if (!ldap_bind($c, $this->conf['ldap']['admin_dn'], $this->conf['ldap']['admin_password'])) {
+        if (!ldap_bind($c, $this->conf['admin_dn'], $this->conf['admin_password'])) {
             return false;
         }
         $entry = ['userPassword' => $this->hashSSHA($new_password)];
@@ -110,9 +110,9 @@ class LDAP extends Component {
 
     public function addUser(array $user) {
         $c = $this->getLDAPConnection();
-        $dn = "{$this->conf['ldap']['auth_key']}={$user[$this->conf['ldap']['auth_key']]},{$this->conf['ldap']['dn_base']}";
+        $dn = "{$this->conf['auth_key']}={$user[$this->conf['auth_key']]},{$this->conf['dn_base']}";
         Toolkit::trace("LDAP DN: $dn");
-        if (!ldap_bind($c, $this->conf['ldap']['admin_dn'], $this->conf['ldap']['admin_password'])) {
+        if (!ldap_bind($c, $this->conf['admin_dn'], $this->conf['admin_password'])) {
             return false;
         }
         Toolkit::trace("adding user");
@@ -125,13 +125,13 @@ class LDAP extends Component {
     }
 
     private function getLDAPConnection() {
-        $c = ldap_connect($this->conf['ldap']['host'], $this->conf['ldap']['port']);
+        $c = ldap_connect($this->conf['host'], $this->conf['port']);
         if (!$c) {
             throw new LDAPException('Cannot connect to LDAP server');
         }
         ldap_set_option($c, LDAP_OPT_PROTOCOL_VERSION, 3);
-        ldap_set_option($c, LDAP_OPT_TIMELIMIT, $this->conf['ldap']['search_timeout']);
-        ldap_set_option($c, LDAP_OPT_NETWORK_TIMEOUT, $this->conf['ldap']['net_timeout']);
+        ldap_set_option($c, LDAP_OPT_TIMELIMIT, $this->conf['search_timeout']);
+        ldap_set_option($c, LDAP_OPT_NETWORK_TIMEOUT, $this->conf['net_timeout']);
         return $c;
     }
 
